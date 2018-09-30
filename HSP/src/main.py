@@ -11,12 +11,12 @@ file_path=''
 
 def preprocessing():
     # 归一化处理,使用的是z-scores
-    scaler = preprocessing.StandardScaler()
-    data_scaled = scaler.fit_transform(data)
+    # scaler = preprocessing.StandardScaler()
+    # data_scaled = scaler.fit_transform(data)
+    #归一化处理，使用的是min-max,(0,1)
+    min_max_scaler = preprocessing.MinMaxScaler()
+    data_scaled = min_max_scaler.fit_transform(data)
     return data_scaled
-    # 归一化处理，使用的是min-max
-    # min_max_scaler = preprocessing.MinMaxScaler()
-    # data_scaled = min_max_scaler.fit_transform(data)
 
 def get_r():
     '''
@@ -77,8 +77,8 @@ def find_neighbor(data_scaled):
         for j in range(dim):
             min=data_scaled[i][j]-cr
             max=data_scaled[i][j]+cr
-            temp_D = data_sorted[, :j]
-            temp_I = index_sorted[, :j]
+            temp_D = data_sorted[:,j]
+            temp_I = index_sorted[:,j]
             res=BinarySearch_interval(temp_D,temp_I,min,max)
             res_array.append(res)
         #求交集intersection
