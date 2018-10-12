@@ -1,170 +1,104 @@
-import numpy as np
-from sklearn import preprocessing
+#!/usr/bin/env python  
+# -*- coding:utf-8 -*-
+__author__ = 'yangqingqing'
+__time__ = '2018/10/7 下午7:22'
 
-'''
-以下都是input
-'''
-# dim = 6
-# num_elements = 74902
-dim=6
-num_elements=1000
+import argparse
+import networkx as nx
+from src import SPVec
+from gensim.models import Word2Vec
+import random
 
-# data = np.array([[3, 1], [-2, -1], [-3, -2], [-1, -1], [2, 1], [3, 2]])
-degree = []  # 这里要得到知识图谱中每个实体的度（出入都包括,一般是同类型之间的度），作为input，自行计算
-file_path = '/Users/yangqingqing/Documents/Entity_Profiling/structural/1858106result.txt'
+def parse_args():
+    """
+    解析 SP2vec 参数.
+    """
+    parser = argparse.ArgumentParser(description="Run node2vec.")
+    # nargs:参数的数量
+    parser.add_argument('--input', nargs='?', default='', help='Input graph path')
+    parser.add_argument('--output', nargs='?', default='', help='Embeddings path')
+    # 特征维度：默认为128维
+    parser.add_argument('--dimensions', type=int, default=128, help='Number of dimensions. Default is 128.')
+    # 每个节点步行长度：默认为80
+    parser.add_argument('--walk-length', type=int, default=80, help='Length of walk per source. Default is 80.')
+    # 每个节点的步行数量：默认值为10
+    parser.add_argument('--num-walks', type=int, default=10, help='Number of walks per source. Default is 10.')
+    # 滑动窗口大小：默认值为10
+    parser.add_argument('--window-size', type=int, default=10, help='Context size for optimization. Default is 10.')
+    # SGD的迭代次数：默认值为1
+    parser.add_argument('--iter', default=1, type=int, help='Number of epochs in SGD')
+    parser.add_argument('--workers', type=int, default=8, help='Number of parallel workers. Default is 8.')
+    # 是否有权值：默认无权值
+    parser.add_argument('--weighted', dest='weighted', action='store_true', help='Boolean specifying (un)weighted. Default is unweighted.')
+    parser.add_argument('--unweighted', dest='unweighted', action='store_false')
+    parser.set_defaults(weighted=False)
+    # 默认为无向图
+    parser.add_argument('--directed', dest='directed', action='store_true', help='Graph is (un)directed. Default is undirected.')
+    parser.add_argument('--undirected', dest='undirected', action='store_false')
+    parser.set_defaults(directed=True)
+    return parser.parse_args()
 
-def preprocessing_data():
-    # 归一化处理,使用的是z-scores
-    # scaler = preprocessing.StandardScaler()
-    # data_scaled = scaler.fit_transform(data)
-    # 归一化处理，使用的是min-max
-    # datalist = []
-    # f = open('/Users/yangqingqing/Documents/Entity_Profiling/structural/1858106.txt', "r")
-    # lines = f.readlines()
-    # for line in lines:
-    #    m = line.strip().split(' ')
-    #    l = m[1:]
-    #    datalist.append(l)
-    # data = np.array(datalist)
-    data = np.random.randint(0, 20, size=[1000, 6])
-
-    min_max_scaler = preprocessing.MinMaxScaler()
-    data_scaled = min_max_scaler.fit_transform(data)
-    return data_scaled
-
-def get_r(data_scaled):
-    '''
-    归一化后计算平均距离和hyperparameter半棱长r
-    :return: r
-    '''
-    J = []  # 平均距离
-    for i in range(dim):
-        data_c = data_scaled[:, i]
-        data_column = sorted(data_c)
-        sum = 0
-        for j in range(1, num_elements):
-            sum += data_column[j] - data_column[j - 1]
-        print(sum)
-        J.append(sum / (num_elements - 1))
-    s = 1
-    print(J)
-    for i in J:
-        s = s * i
-    print(s)
-    r = pow(s, 1 / dim)
-    return r
-
-def change_r(r):
-    '''
-    传入原始的半径r
-    :param r:
-    :return:
-    '''
-    sum_d = 0
-    for i in range(num_elements):
-        sum_d += degree[i]
-    # 计算平均度d_mean和w
-    d_mean = sum_d / num_elements
-    w = d_mean / pow(2, dim)
-    # 缩放后的r_new
-    r_new = pow(w, 1 / dim) * r
-    return r_new
-
-def find_neighbor(data_scaled, cr):
-    '''
-    得到hypercube中最近邻节点
-    :param data_scaled:
-    :param cr:
-    :return:
-    '''
-    # 得到每维特征排序后的data_array，方便后续查找数据，先排序，复杂度是O(dim*n*logn),
-    data_sorted = np.sort(data_scaled, axis=0)  # 按列排序
-    print("================================")
-    index_sorted = np.argsort(data_scaled, axis=0)  # 按列排序的到变化后的索引
-    print(index_sorted)
-    # 排序之后顺序换了样本顺序换了，需要保存下来故有了index_sorted
-    result = []
-    for i in range(num_elements):
-        # 求第i个样本点的近邻点
-        res_array = []
-        for j in range(dim):
-            min = data_scaled[i][j] - cr
-            max = data_scaled[i][j] + cr
-            temp_D = data_sorted[:, j]
-            temp_I = index_sorted[:, j]
-            res = BinarySearch_interval(temp_D, temp_I, min, max)
-            print("%s样本: %s近邻",str(i),res)
-            res_array.append(res)
-        # 求交集intersection
-        l = []
-        l.append(i)
-        s=set(res_array[0])
-        for i in range(1,len(res_array)):
-            s = s.intersection(set(res_array[i]))
-        m = l + list(s)
-        print(m)
-        result.append(m)
-
-    #write_txt(result)
-def BinarySearch_interval(list1, list_Index, min, max):
-    '''
-    二分查找得到区间(f-r，f+r)的样本,只是要找到区间中的值，二分找而不是从前往后O(n)
-    找出该维度特征上对应区间的（min,max）的点，返回这些点（点最原始的索引值）
-    :param list:
-    :param list_Index:
-    :param min:
-    :param max:
-    :return:
-    '''
-    res = []
-    start = 0
-    end = len(list1)
-    while start <= end:
-        mid = int((start + end) / 2)
-        if list1[mid] >= min and list1[mid] <= max:
-            break
-        if list1[mid] < min:
-            start = mid + 1
-        if list1[mid] > max:
-            end = mid - 1
-
-    i = mid
-    j = mid
-    while list1[i] >= min and list1[i] <= max:
-        res.append(list_Index[i])
-        i = i - 1
-        if i < 0:
-            break
-
-    while list1[j] >= min and list1[j] <= max:
-        res.append(list_Index[j])
-        j = j + 1
-        if j >= num_elements:
-            break
-    return res
-
-def write_txt(list):
-    with open(file_path, "a") as f:
-        for li in list:
-            s = ''
-            for l in li:
-                s = s + str(l) + ' '
-            s += '\n'
-            f.writelines(s)
-    f.close()
-def main():
-    data_scaled = preprocessing_data()
-    change=False
-    if change:
-       tempr = get_r(data_scaled)
-       r = change_r(tempr)
+def read_graph(filepath):
+    """ 读取networkx中的输入网络."""
+    if args.weighted:
+        G = nx.read_edgelist(filepath, nodetype=int, data=(('weight', float),), create_using=nx.DiGraph())
     else:
-       r = get_r(data_scaled)
-    #r = 0.1
-    print(r) 
-    # 将结果写入文件中
-    find_neighbor(data_scaled, r)
+        G = nx.read_edgelist(filepath, nodetype=int, create_using=nx.DiGraph())
+        for edge in G.edges():
+            G[edge[0]][edge[1]]['weight'] = 1
+
+    if not args.directed:
+        G = G.to_undirected()
+    return G
+
+def get_dim_numnodes():
+    '''
+    得到类型种类数，即dim
+    :return:
+    '''
+    f = open(args.input, "r")
+    lines = f.readlines()
+    typelist=[]
+    nodeslist=[]
+    dict_tailnode={}
+    for line in lines:
+       m = line.strip().split(' ')
+       head = m[0]
+       tail = m[1]
+       tail_type = m[2]
+
+       nodeslist.append(head)
+       typelist.append(tail_type)
+       dict_tailnode[tail] = tail_type
+
+    nodesset=set(nodeslist)
+    typeset=set(typelist)
+
+    print("number of type of tailnodes(dim): %s",len(typeset))
+    print("number of nodes(num_elements) : %s", len(nodesset))
+
+    return list(typeset),list(nodesset),dict_tailnode
+
+def learn_embeddings(walks):
+    """Learn embeddings by optimizing the Skipgram objective using SGD.通过使用SGD优化Skipgram目标来学习嵌入"""
+    walks = [list(map(str, walk)) for walk in walks]
+    model = Word2Vec(walks, size=args.dimensions, window=args.window_size, min_count=0, sg=1, workers=args.workers, iter=args.iter)
+    model.wv.save_word2vec_format(args.output)
+    return
+
+def main(args):
+    nx_G = read_graph(args.input)#读G
+    typelist,nodelist=get_dim_numnodes()
+    SP=SPVec.SPVecGraph(nx_G,typelist,nodelist)
+    r=SP.get_r()
+    SP.find_neighbor(r)
+
+    # 生成新的图开始随机游走，walks是随机游走生成的多个节点序列
+    SP.new_Graph()
+    new_G=read_graph("data/new_edgelist.txt")
+    walks=SP.build_corpus(new_G,num_paths=args.number_walks,path_length=args.walk_length, alpha=0, rand=random.Random(args.seed))
+
+
 if __name__ == '__main__':
-    main()
-
-
+    args = parse_args()
+    main(args)
