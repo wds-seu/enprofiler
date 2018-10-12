@@ -20,7 +20,6 @@ class SPVecGraph():
         self.typelist=typelist
         self.nodelist=nodelist
         self.dict_tailnode=dict_tailnode
-
         self.data= self.build_input_matrix(self)
         self.data_scaled =self.preprocessing_data()
 
@@ -55,12 +54,12 @@ class SPVecGraph():
 
         write_txt("input_matrix",matrix)
 
-        mappingg_index=[]
-        i=0
-        for n in neighbors:
-            mappingg_index.append([i,n])
-            i+=1
-        write_txt("input_matrix_indexmapping", mappingg_index)
+        # mappingg_index=[]
+        # i=0
+        # for n in neighbors:
+        #     mappingg_index.append([i,n])
+        #     i+=1
+        # write_txt("input_matrix_indexmapping", mappingg_index)
 
         input_matrix=np.array(matrix)
         return input_matrix
@@ -103,6 +102,12 @@ class SPVecGraph():
         :param cr:
         :return:
         """
+        mappingg_index_nodelist={}
+        i=0
+        for n in self.nodelist:
+            mappingg_index_nodelist[i]=n
+            i+=1
+
         # 得到每维特征排序后的data_array，方便后续查找数据，先排序，复杂度是O(dim*n*logn),
         # 排序之后顺序换了样本顺序换了，需要保存下来故有了index_sorted
         result = []
@@ -120,14 +125,17 @@ class SPVecGraph():
                 res_array.append(res)
             # 求交集intersection
             l = []
-            l.append(i)
-            s = set(res_array[0])
+            l.append(mappingg_index_nodelist[i])
+            se = set(res_array[0])
             for i in range(1, len(res_array)):
-                s = s.intersection(set(res_array[i]))
-            m = l + list(s)
+                se = se.intersection(set(res_array[i]))
+            true_node=[]
+            for s in se:
+                true_node.append(mappingg_index_nodelist[s])
+
+            m = l + list(true_node)
             logging.info(m)
             result.append(m)
-
         write_txt("output",result)
 
     def BinarySearch_interval(self, feature_j, feature_j_index, min, max):
