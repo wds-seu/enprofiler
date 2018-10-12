@@ -176,32 +176,32 @@ class SPVecGraph():
                 break
         return res
 
-    def new_Graph(self):
-        edgelist = []
-        f = open('data/output.txt', "r")
-        lines = f.readlines()
-        for line in lines:
-            m = line.strip().split(' ')
-            node = m[0]
-            for i in m[1:, ]:
-                edgelist.append([node, i])
-        f.close()
-        write_txt("new_edgelist",edgelist)
+#     def new_Graph(self):
+#         edgelist = []
+#         f = open('data/output.txt', "r")
+#         lines = f.readlines()
+#         for line in lines:
+#             m = line.strip().split(' ')
+#             node = m[0]
+#             for i in m[1:, ]:
+#                 edgelist.append([node, i])
+#         f.close()
+#         write_txt("new_edgelist",edgelist)
 
-    def build_corpus(G, num_paths, path_length, alpha=0,
-                              rand=random.Random(0)):
-        walks = []
+#     def build_corpus(G, num_paths, path_length, alpha=0,
+#                               rand=random.Random(0)):
+#         walks = []
 
-        nodes = list(G.nodes())
+#         nodes = list(G.nodes())
 
-        for cnt in range(num_paths):
-            rand.shuffle(nodes)
-            for node in nodes:
-                '''随机游走参数是游走的长度，随机方式rand，alpha是可能性一个参数，start是开始节点'''
-                walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node))
-        write_txt("walks",walks)
+#         for cnt in range(num_paths):
+#             rand.shuffle(nodes)
+#             for node in nodes:
+#                 '''随机游走参数是游走的长度，随机方式rand，alpha是可能性一个参数，start是开始节点'''
+#                 walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node))
+#         write_txt("walks",walks)
 
-        return walks
+#         return walks
 
 
 def write_txt(name,list):
