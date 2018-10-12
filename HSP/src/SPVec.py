@@ -21,7 +21,7 @@ class SPVecGraph():
         self.nodelist=nodelist
         self.dict_tailnode=dict_tailnode
 
-        self.data= self.read_feature(self)
+        self.data= self.build_input_matrix(self)
         self.data_scaled =self.preprocessing_data()
 
         self.num_elements = len(self.nodelist)
