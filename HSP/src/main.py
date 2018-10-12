@@ -88,8 +88,8 @@ def learn_embeddings(walks):
 
 def main(args):
     nx_G = read_graph(args.input)#读G
-    typelist,nodelist=get_dim_numnodes()
-    SP=SPVec.SPVecGraph(nx_G,typelist,nodelist)
+    typelist,nodelist,dict_tailnode=get_dim_numnodes()
+    SP=SPVec.SPVecGraph(nx_G,typelist,nodelist,dict_tailnode)
     r=SP.get_r()
     SP.find_neighbor(r)
 
