@@ -13,7 +13,7 @@ There are specific instructions for related module functions inside:
 - 3、过滤标签;
 - 4、后续得到实体的向量结果后进行cos计算操作，估量标签;
 - 5、排序得到标签结果;
-
+=================
 - operations of processing  data sets: parse the RDF data set, and save it into the sqlite table according to certain rules;
 - Interval discretization operation;
 - Filter labels;
@@ -28,7 +28,7 @@ There are specific instructions for related module functions inside:
 - 4、HAS联合路径：HAS_combine_seq.py 该文件用于进行将所有实体节点的路进行融合，而后使用语言模型的方式；
 - 5、findneighbors.py:用于找cube中的邻居；
 - 6、其余的process用于处理sqlite表中数据信息，划分为了string类型标签和数值类型标签；
-
+==================
 - H path:generating H-path based on homogeneity, and H method generates entity vectors;
 - A path:generating A-path based on attribute similarity, and A method to generate entity vectors;
 - S path:generating S-path based on structural similarity, and S method to generate entity vectors;
